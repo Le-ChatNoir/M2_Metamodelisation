@@ -1,0 +1,12 @@
+model Constellation ;
+	entity Satellite ;
+		nom : String ;
+		id : Integer ;
+		panneaux : Array [2] of PanneauSolaire ;
+	end_entity ;
+	entity Flotte ;
+		satellites : List [1 :10] of Satellite ;
+	end_entity ;
+	entity PanneauSolaire ;
+	end_entity ;
+end_model ;

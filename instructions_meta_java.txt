@@ -1,0 +1,109 @@
+https://i.imgur.com/x55tvAL.png
+On va modéliser un MM au niveau M2. On va décrir l'entité qu'on veut mettre dans le meta modele. Pour ça, on va utiliser Ecore, un MM au niveau meta meta.
+
+https://i.imgur.com/hT3l62w.png
+En bas a gauche, Eclasse, on va pouvoir faire des classes, on a des opérations, des structural features qui sont soit des attributs d'une classe, ou des références.
+
+https://i.imgur.com/Pi60nSZ.png
+Sur la droite la classe qui pointe sur la notion d'attribut qui pointe sur la notion de référence qui repointe sur la classe. Un ref pointe sur une ref particuliere qui est une classe. On a un attributcontainment boolean qui lorsqu'à 1 fait un rectangle noir -> composition. Les instances de cette classe, on ne peut les instancier que dans les instances de la classe qui les contient.
+Sur la classe reference, on a une ref qui reboucle 'eopposite) qui veut dire qu'on a potentiellement une ref bidirectionelle entre deux classes. Quand on crée graphiquement notre MM, on fait une double flèche, et ces deux instances sont donc créées.
+
+https://i.imgur.com/MEsyRlr.png
+En Ecore on peut avoir de l'héritage multiple. Sur une classe on a deux liens d'héritage sur deux super classes direct. A partir de ces MM définis en Ecore, on va générer du java, quand bien même il n'a pas d'héritage multiple.
+
+Le projet genericDoc contient le MM. On a un dossier "model". On a plusieurs extensions.
+Si on déploie le .aird, on a un point de vue, on ouvre plus bas juqu'au genericDoc class diagram, qui est la représentation graphique. A droite, la palette de tous les éléments qu'on peut utiliser pour créer des MM.
+
+Sous le ecore, si on double clic, on a le MM qui s'affiche en "arborescence", avec la liste des metaclasses.
+Le .ecore et le .aird sont strictement la meme chose, le .aird est une vue graphique du ecore. Si on a les deux ouverts et qu'on modifie  un coup en graphique, un coup en arbre, des fois il y aura des pb de synchro, donc, n'avoir que l'un ou l'autre ouvert, et n'en modifier qu'nu seul. Si pb synchro, le bon sera le .ecore.
+
+Le genmodel, qu'on peut double liquer aussi, sert à générer le code associé au MM.
+
+On peut donc éditer le MM graphiquement ou par arborescence. Si on a des erreurs de syntaxe (non connecté...), on aura des éléments en rouge. Il faut donc aller sur le ecore, selectionner le package racine, clic droit, et "Validate" pour valider la syntaxe du MM. Si il est correct, alors on peut soit directement créer des modèles à partir de ce MM, soit générer le code.
+
+En ouvrant le .genericDoc.genmodel, on a une vue arborescente qui s'affiche. En sélectionnant le package racine, click droit, "Generate All", ou, a minima, "Generate Model Code". Le code généré sera dans src-gen. On aura alors 3 packages, le genericDoc, le genericDoc.impl comme implémentation, et le genericDoc.util.
+
+Le 1er aura tout décrit comme des interfaces. Le .imp sera de classes java générés pour toutes les implémentations du MM.
+
+Le MM ici est compliqué. C'est un modèle qui décrit la structure d'une documentation. NamedElement est une classe abstraite avec un seul attribut name. On a ensuite des sous classes de cette classe abstraite. Chaque "étage" contient une liste de la "sous-classe" suivante.
+Les Chapitres sont une composition de GenericDoc, on ne pourra les créer que dans le contexte de GenericDoc (losange noir) On ne va pas pouvoir référencer un chapitre a partir d'une section, ou d'une sous section.
+Toutes les sous-classes (sauf paragraphe) héritent de NamedElement, elles auront donc un nom.
+
+On va créer un modèle conforme a ce MM. D'abord, on va créer une instance a la main.
+On ouvre le ecore, et on prend GenericDoc comme racine. Tout va se créer à partir de là. Donc on séléctionne GenericDoc, click droit, et "Create Dynamic Instance".
+On nomme ce fichier en extension .xmi. On a alors une fenetre, puisque GenericDoc est la racine, on a alors un objet de type GenericDoc. Si on double click, on a une fentre propriété qui s'ouvre, et on peut ajouter un nom a la doc.
+On peut click droit dessus, et faire "New Child". Ona  alors leurs éléments de composition, ici, les chapitres.
+Si on ne fait que les référencer, alors ils sont considérés comme étant créés autrement, ailleurs, et ne sont donc pas proposés ici dans New Child.
+On a cependant dans la fenetre de propriétés le nom de la référence, et le faire pointer sur la bonne.
+Ici, on peut alors créer des sous sections, des frères etc...
+
+Dans le code généré, on a deux classes dans le .util. Une classe factory pour créer par programme (dynamiquement) tous les éléments du MM, et l'autre classe GenericDocSwitch, qui implémente une classe qui est déjà une extension qu'une classe prédéfinie Switch. Elle permet de parcourir tous les éléments de nos modèles. (relatifs à la défénition donnée dans le MM). Dans cette classe, on a une méthode doSwitch() qui, dans l'utilisation du MM, on va pouvoir appeler pour parcourir tous les éléments de MM, c'est donc un visiteur. (Vu avec Alain Plantec avec les accept etc...).
+On l'a ici par défaut.
+Dans le cas du branchement sur les NamesElements, on fait appel à une classe caseNamedElement(), pour genericDoc, caseGenericDoc() etc. Le code généré est alors un grand switch sur chacun des case, pour chaque metaclasse.
+Si on regarde ces classes caseXXX(), elles sont toutes seulement en return null, on peut alors réécrir les fonctions caseXXX() pour avoir notre propre générateur de code.
+
+Donc, il faut:
+1 - Faire le MM
+2 - Valider le MM
+3 - Générer le code
+4 - Faire une instance (éventuellement)
+5 - Ecrire des programmes qui vont tout manipuler
+
+
+
+
+
+On passe au projet genericDocModelGeneration. On regarde le DocModelPrinter. Cette classe étend le GenericDocSwitch. CCette classe étend donc le switch géant. On va donc fournir une implémentation pour tous les cases. C'est donc une sous-classe. Grace au switch et a cette méthode, on va visiter toutes les classes de ce modèle.
+Ici, tout ne revoie que des Strings. On va donc remplir une chaine, et la retourner a la fin. Quand on va faire appel au printer, ça va donc faire une grande chaine que l'on pourra soit afficher à l'écran, soit stocker dans un fichier.
+On va implémenter implicitement notre visiteur ici.
+Pour toutes les classes avec un attribut, on a un accesseur. Si on a des sous-classes (ex Chapters pour GenericDoc), on fait une boucle pour avoir tous les chapters, en appelant leur methode case (ici caseChapters()).
+
+Dans cette classe, il y a même un main qui va créer un modèle par programme. On crée une factory à partir du code généré (genericDocFactory), puis on instancie un printer (une instance de la classe montrée précédement), et on crée notre document avec la createXXX() de notre factory, avec les setters etc...
+On peut ensuite rattacher nos sous instances a leur structure préexistante par add() (ici myDoc.getChapters().add(aCh)).
+A la fin, on a notre appel au modelPrinter en appelant le doSwitch sur l'instance du modèle créé.
+
+La partie docModel.util a été créé à la main, non généré automatiquement.
+
+Si on a plusieurs projets ou classes avec un main, on fait la flèche à cot du run, "Run Configuration), on prend le bon projet, la bonne classe, et on peut run."
+
+
+
+
+
+On peut maintenant ouvrir le DocModelLoader.java. 
+Dans le code généré, on a un reader et un writter fourni par le xmi. 
+Elle implémente le fait de charger le modèle, recopier la recette.
+Il faudra reproduir le loadModel, le saveModel.
+Ca sera a nous de faire le DocModelHTML. 
+Lorsqu'on fera le run configuration, il faudra donner le nom d'un fichier.
+La variable file est une string contenant le chemin absolu menant au .xmi que l'on souhaite charger. Il faut le changer pour pointer sur le projet de MM genericDoc en chamin absolu.
+Pour sauvegarder dans un fichier, on a un PrintWriter qui va ouvrir un fichier, et on va faire un println d'un appel au visiteur.doSwitch avec notre document en paramettre.
+C'est donc un objet qui va écrire dans un fichier la chaine de caractère de visite de tout le fichier.
+Derrière, on a créé par programme un chapitre comme tout  à l'heure, mais on doit l'accrocher a un modèle déjà existant. On va donc le .add() a la liste des chapitres de notre aDoc.
+Si on va voir dans le fichier qui va stocker les infos de notre modèle, on aura pas le chapitre ajouté, car il l'a été après l'écriture, mais il sera affiché à l'écran avec le dernier System.out.println.
+On fait le run config, et en argument, un petit dossier avec le nom du ficher dans lequel on veut tout sauvegarder. (ici generated). Une fois l'exec faite, on a notre fichier, et notre .xmi créé par la génération manuelle, avec le chapitre 3 ajouté après etc...
+
+Il faut donc générer un doc HTML propre. Pour les titres de doc, un <H1>, our les section, <H2> etc...
+
+C:/Users/Lukas/Desktop/Cours/M2/META/Champeau/Workspace_Chapeau/ProjetSDLGeneration2/generatedDocs/SDLResults
+
+
+
+
+Projet:
+Langage SDL: spec protocol. Mise en oeuvre d'une démarche MMisation et mise en oeuvre sous ecore. Mettre en place des visiteurs pour générer du code.
+SLD est spec au domaine télécom, dédié à la spec des protocoles. Standardisé par l'ITU. Asyncrone, chaque process envoie son signal dans un canal et continue son processus. Ce sont des machines à état. Le syntaxe est graphique ET textuelle. 
+Ex de syntaxe: https://i.imgur.com/BfdFiLg.png . Les modèles sont créés avec un point d'entrée. On peut imbriquer les blocs les uns dans les autres. On a tout en haut notre bloc (bloc B), et nos signaux déclarés globalement dans le système, car ils vont pouvoir etre utilisés dans differents blocs et processus. On a aussi les chanels qui vont relier les blocs aux autres parties internes. Ici, c_in qui lie l'environement exterieur au bloc B. Il va véhiculer des signaux (ici s), et de même pour c_out avec le signal t. Pour les états, on a notre point d'entrée qui va sur l'état idle, il reçoit le signal s, émet le signal t, et reboucle sur l'état idle. On a aussi le nom des blocs/process référencés. Quand on en a plusieurs, on les sépare par une virgule, et chaque fin de ligna a un ';'. L'architecture du bloc suit la même que le système, et on référence tous les process définis. Pour les process, on a la meme chose, le mot clé, suivit du nom. On a le point d'entrée 'start', et l'état suivant de départ. On a la définition de tous les états qui se succèdent, et le mot clé 'endstate' pour signaler la fin du l'état. Dans idle, on retrouve notre transition, 'input s' indique l'attente de réception du signal s, et de meme avec output t. On a ensuite la transition de l'état suivant. Si on avait plusieurs transitions sortant de l'état idle, on aurait les autre chemins pour chaque transition. (donc suivant: input a; output b; nextstate toto;).
+Notre niveau système peut aussi avoir un process directement: https://i.imgur.com/SBypSQX.png . On référence bien tout ce qui est contenu dans le système. Le processus est le même que précédement, le bloc ne change pas. On va donc devoir décrire un MM qui décrit ceci. Un système qui contient des signaux, des chanels, des processus etc, et dans les processus, une liste d'états et de transitions. On réduit donc le système avec seulement System et Process, avec des Channls reliés aux Process.
+On peut faire ça de manière itérative: faire un modèle, faire une instance du modèle à la main (pb: si on le modifie, ça ne marche plus). Une fois qu'on a notre instance, on va pouvoir refaire les visiteurs qui parcourant le modèle, et implémenter un premier pretty printer du langage SDL qui sortira la syntaxe textuelle qui se print dans la console/dans le fichier.
+Dans la page HTML, on génèrera une représentation de notre automate, et simuler la réception des différents signaux et transitions pour voir comment s'execute l'automate. Avec le PDF, fichiers CSS, JS et HTML d'exemple. Le CSS formate l'affichage du HTML et déclare des classes réutilisables dans le JS généré, et simplifie l'écriture du code généré.
+Exemple des deux processus Ping/Pong: https://i.imgur.com/PXw4wOA.png Le démmarage envoie sur state1, et la réception du signal sig1 déclance l'envoi du signal sig2, et envoie en state2, qui attend la récéption du signal sig2 pour envoyer le sig1, et envoie en state1. En mirroir, on a en étate de départ l'état 'idle' qui attend le signal sig2 et envoie le signal sig1 pour se mettre en état wait.
+En HTML, on va avoir notre nom de système, tous nos process à la suite, dans les états la liste des états, et en face un input pour cet état actif. Si on a plusieurs inputs par état, on aura une liste de boutons.
+En JS, rendu séquentiel associé au HTML. cela génère donc les deux automates.
+A rendre pour le 18 janvier: Le MM SDL, des modèles SDL avec les exemples Ping/Pong process, le générateur de code SDL (le visiteur pour le code textuel SDL), les générateurs de code HTML/JS. Donc deux projets eclipse. Un pour faire le modèle ecore, et un autre java qui permet de générer (???).
+Donc un MM, 3 visiteurs, et un main en Java pour avoir tout ça.
+Egalement dans l'archive, un fichier readme.txt qui va permettre de décrire l'organisation du rendu, plus quelques commentaires.
+Exemple MM: https://i.imgur.com/Ncmqg71.png
+
+Create empty ecore project
+Pb input/output

@@ -1,0 +1,13 @@
+Le projet est séparé en deux parties, les packages "simple", les les packages "multiple". Les noms sont explicites, car ils séparent les deux parties du sujet selon les associations simples ou multiples.
+Toutes les classes héritent de NamedElement, permettant de les nommer, puis suivent une hiérarchie Model > Entity > Attribute. Chaque classe a ses getter, et ses setters, ainsi qu'un accept pour le visiteur.
+Le pretty printer utilises une encapsulation comme celle vue en cours, imbriquant les accept() afin de retourner une chaine de caractère définissant le modèle comme sous la figure 3 du sujet. Pour les listes d'attributs contenu dans les entités, et les entités dans les models, une simple boucle for est utilisée. PrettyPrinterTest vérifie la validation du pretty printer par tests JUnit.
+
+Pour l'association multiple, nousavons fait évoluer la classe Attribute afin de lui donner plusieurs constructeurs. Selon ce qui lui est fournis, il remplira les nouveaux champts de taille, du nom du type voulu (List, Bag, Array...), l'étendue minimum et maximum, ainsi que la variable typeTrack, qui permettera de vérifier de quel type d'attribut il s'agit. Dans le fichier, il y a au dessus de chaque constructeur la sortie qui sera fournie une fois traitée, afin de garder une trace de quel constructeur s'occupe de quel rôle d'attribut.
+Le pretty printer évolue également, vérifiant le typeTrack de l'attribut afin de savoir quel type de string remonter à la construction, le reste est pareil que pour le type simple. De nouveaux tests JUnit ont été ajoutés au PrettyPrinterTest.
+Egalement, la classe ReadXMLFile a été créée. Elle permet de prendre un fichier XML. Le fichier utilisé est ex1.xml se trouvant dans le dossier SimpleLanguageModel. Il est formé de la façon suivante:
+Une encapsulation classique est faite comme pour la figure 6, mais on ajoute aux attributs les informations necessaires pour remplir les differents paramètres des constructeur.
+Ce fichier est découpé par la méthode contruct() de ReadXMLFile, qui retournera le modèle complet, et prêt à être traité (test4 JUnit).
+
+Enfin, l'outil de renomage Renamer prends pour base le pretty printer, mais a pour attributs un baseName, et un newName. baseName est le nom que l'on souhaite remplacer pa newName. Alors, à chaque fois qu'un élément est traité, le nom de l'élément est pris, et est comparé au nom que l'on souhaite changer. Si les deux sont égaux, alors le nom est changé, sinon, le nom de base es inserré dans la chaine de caractère.
+
+Tous les résultats sont écrits dans des fichiers trouvables à la base du projet.

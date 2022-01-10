@@ -1,0 +1,86 @@
+/*
+   Simple +/-/* expression language; 
+   parser evaluates constant expressions on the fly
+*/
+
+package cup.example;
+
+import java_cup.runtime.*;
+import cup.example.Lexer;
+import java.io.IOException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.*;
+import SLMetaModel.*;
+
+parser code {:
+  protected Lexer lexer;
+  public ArrayList<Exp> prog;
+
+  public void parseFileNamed(String filename) throws Exception {
+	this.parseStream(new java.io.FileInputStream(filename));
+  }
+
+  public void parseString(String source) throws Exception {
+	parseFromReader(new java.io.StringReader(source));
+  }
+
+  public void parseStream(java.io.InputStream stream) throws Exception {
+	parseFromReader(new java.io.InputStreamReader(stream));
+  }
+
+  public void parseFromReader(java.io.Reader reader) throws Exception {
+	setScanner(new Lexer(reader));
+	parse();
+  }
+
+:}
+
+/* define how to connect to the scanner! */
+init with {:
+  ComplexSymbolFactory f = new ComplexSymbolFactory();
+  symbolFactory = f;
+  File file = new File("input.txt");
+  FileInputStream fis = null;
+  try {
+    fis = new FileInputStream(file);
+  } catch (IOException e) {
+    e.printStackTrace();
+  } 
+ // lexer = new Lexer(f,fis);
+  prog = new ArrayList<Exp>();
+:};
+
+scan with {: return lexer.next_token(); :};
+
+/* Terminals (tokens returned by the scanner). */
+terminal            SEMI, PLUS, MINUS, UMINUS, TIMES, LPAREN, RPAREN, MODULO;
+terminal Integer    NUMBER;        // our scanner provides numbers as integers
+
+/* Non terminals */
+non terminal program;
+non terminal ArrayList<Exp>       expr_list;
+non terminal Exp    expr;      // used to store evaluated subexpressions
+
+/* Precedences */
+precedence left PLUS, MINUS;
+precedence left TIMES;
+precedence left UMINUS;
+
+/* The grammar rules */
+program	::= expr_list:l {: prog = l; :}
+			;
+
+expr_list ::= expr_list:l expr:e SEMI       {:  prog.add(e); RESULT = prog; :}
+            | expr:e SEMI                   {: prog.add(e); RESULT = prog; :}
+            ;
+            
+expr      ::= expr:e1 PLUS  expr:e2         {: RESULT = new AddExp(e1,e2);        :}
+             | expr:e1 MINUS expr:e2        {: RESULT = new MinusExp(e1,e2);       :}
+             | expr:e1 TIMES expr:e2        {: RESULT = new MultExp(e1,e2);       :}
+             | MINUS expr:e                 {: RESULT = new MultExp(e,new IntExp(-1)); :}
+             %prec UMINUS
+             | LPAREN expr:e RPAREN	         {: RESULT = e;           :}
+             | NUMBER:n	                     {: RESULT = new IntExp(n);           :}
+             ;
+       

@@ -1,0 +1,10 @@
+<entity name="Satellite">
+    <attribute name="nom" type="String" typetrack="simple" />
+    <attribute name="id" type="Integer" typetrack="simple" />
+    <attribute name="panneaux" type="PanneauSolaire" typetrack="Array" size=2 />
+</entity>
+<entity name="Flotte">
+    <attribute name="satelites" type="Satellite" typetrack="List" min=1 max=10 />
+</entity>
+<entity name="PanneauSolaire">
+</entity>

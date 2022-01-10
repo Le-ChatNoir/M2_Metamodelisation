@@ -1,0 +1,12 @@
+<model name="Constellation">
+    <entity name="Satellite">
+        <attribute name="nom" type="String" typetrack="simple" typecollec="Null" min="0" max="10"/>
+        <attribute name="id" type="Integer" typetrack="simple" typecollec="Null" min="0" max="10"/>
+        <attribute name="panneaux" type="PanneauSolaire" typetrack="array" typecollec="Array" min="0" max="2" />
+    </entity>
+    <entity name="Flotte">
+        <attribute name="satellites" type="Satellite" typetrack="cardinal" typecollec="List" min="1" max="10" />
+    </entity>
+    <entity name="PanneauSolaire">
+    </entity>
+</model>
